@@ -1,0 +1,201 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Proyecto Colegio",
+  "dateExport": "2026-04-23",
+  "version": "1.1",
+  "folders": [
+    {
+      "name": "Autenticación",
+      "requests": [
+        {
+          "name": "Login Profesor",
+          "method": "POST",
+          "url": "http://localhost:3000/api/auth/teacher/login",
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"email\": \"profesor@colegio.com\",\n  \"password\": \"password123\"\n}"
+          },
+          "tests": []
+        },
+        {
+          "name": "Login Estudiante",
+          "method": "POST",
+          "url": "http://localhost:3000/api/auth/student/login",
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"documentNumber\": \"1234567890\",\n  \"password\": \"password123\"\n}"
+          },
+          "tests": []
+        }
+      ]
+    },
+    {
+      "name": "Estudiantes",
+      "requests": [
+        {
+          "name": "Obtener todos los estudiantes",
+          "method": "GET",
+          "url": "http://localhost:3000/api/students",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Crear estudiante",
+          "method": "POST",
+          "url": "http://localhost:3000/api/students",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"firstName\": \"María\",\n  \"lastName\": \"González\",\n  \"grade\": 7,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"9876543210\",\n  \"email\": \"maria@email.com\",\n  \"phone\": \"3007654321\",\n  \"password\": \"password123\"\n}"
+          }
+        },
+        {
+          "name": "Actualizar estudiante",
+          "method": "PUT",
+          "url": "http://localhost:3000/api/students/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"firstName\": \"María\",\n  \"lastName\": \"González\",\n  \"grade\": 8,\n  \"email\": \"maria.new@email.com\"\n}"
+          }
+        },
+        {
+          "name": "Eliminar estudiante",
+          "method": "DELETE",
+          "url": "http://localhost:3000/api/students/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Obtener estudiantes eliminados",
+          "method": "GET",
+          "url": "http://localhost:3000/api/students/removed",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profesores",
+      "requests": [
+        {
+          "name": "Obtener todos los profesores",
+          "method": "GET",
+          "url": "http://localhost:3000/api/teachers",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Crear profesor",
+          "method": "POST",
+          "url": "http://localhost:3000/api/teachers",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"email\": \"juan.perez@colegio.com\",\n  \"documentNumber\": \"1122334455\",\n  \"password\": \"password123\",\n  \"gradeAssigned\": 6,\n  \"subject\": \"Matemáticas\"\n}"
+          }
+        },
+        {
+          "name": "Actualizar profesor",
+          "method": "PUT",
+          "url": "http://localhost:3000/api/teachers/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"gradeAssigned\": 7\n}"
+          }
+        },
+        {
+          "name": "Eliminar profesor",
+          "method": "DELETE",
+          "url": "http://localhost:3000/api/teachers/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Calificaciones",
+      "requests": [
+        {
+          "name": "Obtener notas de un estudiante",
+          "method": "GET",
+          "url": "http://localhost:3000/api/grades/student/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Obtener notas de estudiantes del profesor",
+          "method": "GET",
+          "url": "http://localhost:3000/api/grades/teacher/5",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Crear calificación",
+          "method": "POST",
+          "url": "http://localhost:3000/api/grades",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"studentId\": 1,\n  \"teacherId\": 5,\n  \"subject\": \"Matemáticas\",\n  \"score\": 4.5,\n  \"quarter\": 1,\n  \"period\": 2026\n}"
+          }
+        },
+        {
+          "name": "Actualizar calificación",
+          "method": "PUT",
+          "url": "http://localhost:3000/api/grades/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"score\": 4.8,\n  \"quarter\": 1\n}"
+          }
+        },
+        {
+          "name": "Eliminar calificación",
+          "method": "DELETE",
+          "url": "http://localhost:3000/api/grades/1",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asistente IA",
+      "requests": [
+        {
+          "name": "Hacer pregunta al asistente",
+          "method": "POST",
+          "url": "http://localhost:3000/api/assistant/ask",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          },
+          "body": {
+            "mimeType": "application/json",
+            "text": "{\n  \"question\": \"¿Cuál es la mejor forma de enseñar fracciones en sexto grado?\"\n}"
+          }
+        }
+      ]
+    }
+  ]
+}

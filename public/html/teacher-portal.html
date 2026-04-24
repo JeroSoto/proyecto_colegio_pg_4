@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Profesor - Colegio</title>
+  <link rel="stylesheet" href="../css/modern-css/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div>
+      <h2>Portal del Profesor</h2>
+      <p class="navbar-subtitle">Gestiona calificaciones, documentos y ayuda pedagógica.</p>
+    </div>
+    <div class="navbar-right">
+      <span id="teacher-name"></span>
+      <button id="theme-toggle" type="button">Cambiar tema</button>
+      <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <div class="page-grid">
+    <aside class="side-panel">
+      <div class="profile-card">
+        <p class="eyebrow">Profesor</p>
+        <h3 id="teacher-name-side"></h3>
+        <p>Grado <strong id="assigned-grade"></strong></p>
+        <p>Materia <strong id="assigned-subject"></strong></p>
+      </div>
+      <nav class="panel-menu">
+        <button class="menu-button active" data-section="dashboard">Tablero</button>
+        <button class="menu-button" data-section="grades">Calificaciones</button>
+        <button class="menu-button" data-section="documents">Documentos</button>
+        <button class="menu-button" data-section="assistant">Asistente IA</button>
+      </nav>
+    </aside>
+
+    <main class="content-panel">
+      <section id="dashboard-section" class="panel-section active">
+        <div class="grid-cards">
+          <div class="card card-summary">
+            <h3>Resumen rápido</h3>
+            <p>Grado asignado:</p>
+            <strong id="assigned-grade-card"></strong>
+            <p>Materia:</p>
+            <strong id="assigned-subject-card"></strong>
+          </div>
+          <div class="card card-summary">
+            <h3>Estudiantes</h3>
+            <strong id="students-count">Cargando...</strong>
+            <p>Alumnos en tu grado</p>
+          </div>
+          <div class="card card-summary">
+            <h3>Documentos</h3>
+            <strong id="docs-count">Cargando...</strong>
+            <p>Materiales enviados</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="grades-section" class="panel-section">
+        <div class="section-header">
+          <h3>Calificaciones</h3>
+          <div class="section-actions">
+            <label for="quarter-select">Trimestre</label>
+            <select id="quarter-select">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <table id="grades-table">
+            <thead>
+              <tr>
+                <th>Estudiante</th>
+                <th>Documento</th>
+                <th>Nota</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+          <button onclick="saveAllGrades()" class="login-btn">Guardar calificaciones</button>
+        </div>
+      </section>
+
+      <section id="documents-section" class="panel-section">
+        <div class="card">
+          <h3>Subir documento</h3>
+          <form id="document-form" class="form-grid">
+            <label for="doc-student-id">ID Estudiante</label>
+            <input type="number" id="doc-student-id" placeholder="Ej. 10" required />
+
+            <label for="doc-title">Título</label>
+            <input type="text" id="doc-title" placeholder="Título del material" required />
+
+            <label for="doc-description">Descripción</label>
+            <textarea id="doc-description" placeholder="Descripción breve"></textarea>
+
+            <label for="doc-url">Enlace / URL</label>
+            <input type="url" id="doc-url" placeholder="https://" />
+
+            <button type="submit" class="login-btn">Enviar documento</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Documentos enviados</h3>
+          <div id="documents-list"></div>
+        </div>
+      </section>
+
+      <section id="assistant-section" class="panel-section">
+        <div class="assistant-banner">
+          <h3>Asistente IA</h3>
+          <p>Consulta dudas pedagógicas o planea actividades para tu grado.</p>
+          <form id="assistant-form">
+            <textarea placeholder="Escribe tu pregunta aquí..." required></textarea>
+            <button type="submit">Enviar</button>
+          </form>
+          <div id="assistant-answer" class="answer-box"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/teacher.js"></script>
+  <script src="../js/theme.js"></script>
+</body>
+</html>

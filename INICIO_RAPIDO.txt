@@ -1,0 +1,183 @@
+🚀 INICIO RÁPIDO - PROYECTO COLEGIO
+
+═══════════════════════════════════════════════════════════════
+
+📦 PASO 1: Instalar Dependencias
+───────────────────────────────────────────────────────────────
+
+cd c:\Users\JERONIMO\Downloads\PROYECTO_COLEGIO
+npm install
+
+✅ Esto descargará: express, sqlite3, bcrypt, jsonwebtoken, axios, dotenv
+
+
+🔑 PASO 2: Configurar Variables de Entorno
+───────────────────────────────────────────────────────────────
+
+Abre el archivo .env y configura:
+
+  PORT=3000                                   (puerto del servidor)
+  JWT_SECRET=tu_clave_secreta                (para tokens)
+  GEMINI_API_KEY=tu_clave_gemini_aqui        (para IA - opcional)
+  OPENAI_API_KEY=tu_clave_openai_aqui        (para IA - opcional)
+
+Si no tienes claves de IA, deja los valores vacíos.
+
+
+▶️ PASO 3: Iniciar el Servidor
+───────────────────────────────────────────────────────────────
+
+npm start
+
+Verás algo como:
+  ✓ Conectado a la base de datos SQLite en ./data/school.db
+  ✓ Servidor escuchando en http://localhost:3000
+
+
+🌐 PASO 4: Abrir en Navegador
+───────────────────────────────────────────────────────────────
+
+http://localhost:3000
+
+Verás la página de LOGIN con dos pestañas:
+  👨‍🏫 Profesor
+  👨‍🎓 Estudiante
+
+
+📝 PASO 5: Crear tu Primera Cuenta
+───────────────────────────────────────────────────────────────
+
+OPCIÓN A: Registrar como Profesor
+  1. Click en pestaña "Profesor"
+  2. Click en "Registrarse"
+  3. Completa el formulario:
+     - Nombres, Apellidos
+     - Correo (profesor@colegio.com)
+     - Documento
+     - Grado asignado (0-11)
+     - Materia
+     - Contraseña (mínimo 8 caracteres)
+  4. Ingresa con tu correo y contraseña
+
+OPCIÓN B: Registrar como Estudiante
+  1. Click en pestaña "Estudiante"
+  2. Click en "Registrarse"
+  3. Completa el formulario:
+     - Nombres, Apellidos
+     - Número de documento
+     - Grado (0-11)
+     - Contraseña (mínimo 8 caracteres)
+  4. Ingresa con tu documento y contraseña
+
+
+📊 PORTAL DEL PROFESOR
+───────────────────────────────────────────────────────────────
+
+Al ingresar como profesor, verás:
+
+  ✓ Tu información (Grado y Materia asignados)
+  ✓ TABLA DE CALIFICACIONES:
+    - Nombres y apellidos de estudiantes
+    - Números de documento
+    - Campos para ingresar notas (0-5)
+    - Selector de trimestre (1-4)
+    - Botón "Guardar Todas las Calificaciones"
+
+  ✓ BANNER DE ASISTENTE IA:
+    - Haz preguntas sobre pedagogía
+    - Recibe respuestas de Gemini o OpenAI
+    - Ejemplo: "¿Cómo enseñar fracciones en sexto?"
+
+
+👨‍🎓 PORTAL DEL ESTUDIANTE
+───────────────────────────────────────────────────────────────
+
+Al ingresar como estudiante, verás:
+
+  ✓ Tu información (Grado y Categoría)
+  ✓ TABLA DE CALIFICACIONES:
+    - Todas tus notas
+    - Profesores que calificaron
+    - Trimestre y período
+
+  ✓ ASISTENTE IA:
+    - Haz preguntas sobre temas escolares
+    - Recibe respuestas inteligentes
+
+
+🗄️ BASE DE DATOS AUTOMÁTICA
+───────────────────────────────────────────────────────────────
+
+Se crean automáticamente 4 tablas:
+
+  📋 students        - Estudiantes activos
+  👨‍🏫 teachers        - Profesores
+  ⭐ grades          - Calificaciones
+  🗑️ removed_students - Estudiantes eliminados (borrado pasivo)
+
+
+📚 DOCUMENTACIÓN
+───────────────────────────────────────────────────────────────
+
+Abre estos archivos en tu editor para más detalles:
+
+  📄 README.md            - Descripción general
+  📄 INSTALACION.md       - Guía paso a paso
+  📄 REQUISITOS.md        - Requisitos funcionales
+  📄 API.md              - Documentación de endpoints
+  📄 EJEMPLO_USO.md      - Ejemplos con curl
+  📄 INDICE.md           - Índice de archivos
+  📄 DATOS_EJEMPLO.sql   - Datos de prueba
+
+🧪 THUNDER CLIENT COLLECTION:
+  📄 docs/THUNDER_CLIENT.json
+
+
+💡 CONSEJOS
+───────────────────────────────────────────────────────────────
+
+✓ Usa datos de ejemplo:
+  - Profesor: juan.perez@colegio.com / password123
+  - Estudiante: 1234567890 / password123
+
+✓ Si el puerto 3000 está ocupado, cambia en .env:
+  PORT=3001
+
+✓ Para resetear la base de datos, elimina la carpeta data/
+
+✓ Las contraseñas están encriptadas con bcrypt
+
+✓ Los tokens JWT expiran en 8 horas
+
+
+🆘 PROBLEMAS COMUNES
+───────────────────────────────────────────────────────────────
+
+❌ "Cannot find module 'express'"
+  ✓ Ejecuta: npm install
+
+❌ "Port 3000 is already in use"
+  ✓ Cambia PORT en .env a 3001, 3002, etc.
+
+❌ "Database file not found"
+  ✓ Se crea automáticamente, espera unos segundos
+
+❌ "Invalid token"
+  ✓ Vuelve a loguearte, el token expiró o no es válido
+
+
+📞 NEXT STEPS
+───────────────────────────────────────────────────────────────
+
+1. Registra un profesor
+2. Registra estudiantes del mismo grado
+3. El profesor ingresa notas desde su portal
+4. Los estudiantes ven sus notas en su portal
+5. Ambos consultan el asistente IA
+6. Crea más usuarios para probar
+
+═══════════════════════════════════════════════════════════════
+
+¡Listo! Tu sistema está funcionando. 🎉
+
+Para más información, lee los archivos de documentación.

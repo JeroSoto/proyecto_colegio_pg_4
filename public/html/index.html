@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ingreso Colegio</title>
+  <link rel="stylesheet" href="../css/modern-css/styles.css" />
+</head>
+<body>
+  <div class="page-grid">
+    <aside class="banner-panel">
+      <div class="panel-card">
+        <p class="eyebrow">Asistente IA</p>
+        <h1 class="panel-title">Bienvenido al colegio</h1>
+        <p class="panel-subtitle">Accede como profesor o estudiante para ver tus calificaciones, recursos y ayuda en un solo lugar.</p>
+        <ul class="panel-list">
+          <li>Ingreso obligatorio antes de acceder al sistema.</li>
+          <li>Todo se gestiona desde la base de datos, sin registro público.</li>
+          <li>Modo claro y oscuro disponible para tu comodidad.</li>
+        </ul>
+      </div>
+
+      <div class="panel-footer">
+        <p>El asistente está siempre listo para ayudarte a planear clases, mejorar el estudio o resolver dudas académicas.</p>
+      </div>
+    </aside>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <header>
+          <div>
+            <h2>Ingreso seguro</h2>
+            <p>Selecciona tu rol y accede al sistema.</p>
+          </div>
+          <div class="theme-switch">
+            <span id="theme-label">Modo claro</span>
+            <button id="theme-toggle" type="button">Cambiar</button>
+          </div>
+        </header>
+
+        <div class="role-switch">
+          <button type="button" class="role-btn active" data-role="student">Soy Estudiante</button>
+          <button type="button" class="role-btn" data-role="teacher">Soy Profesor</button>
+        </div>
+
+        <form id="login-form" class="login-form">
+          <div id="student-fields" class="role-fields active">
+            <div class="input-group">
+              <label for="student-document">Número de documento</label>
+              <input type="text" id="student-document" name="documentNumber" placeholder="12345678" required />
+            </div>
+            <div class="input-group">
+              <label for="student-password">Contraseña</label>
+              <input type="password" id="student-password" name="password" placeholder="Contraseña" required />
+            </div>
+            <button type="submit" class="login-btn">Ingresar como Estudiante</button>
+          </div>
+
+          <div id="teacher-fields" class="role-fields">
+            <div class="input-group">
+              <label for="teacher-email">Correo electrónico</label>
+              <input type="email" id="teacher-email" name="email" placeholder="profesor@colegio.com" required />
+            </div>
+            <div class="input-group">
+              <label for="teacher-password">Contraseña</label>
+              <input type="password" id="teacher-password" name="password" placeholder="Contraseña" required />
+            </div>
+            <button type="submit" class="login-btn">Ingresar como Profesor</button>
+          </div>
+        </form>
+
+        <div id="message" class="message"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/theme.js"></script>
+  <script src="../js/login.js"></script>
+</body>
+</html>

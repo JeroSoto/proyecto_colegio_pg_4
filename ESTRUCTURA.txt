@@ -1,0 +1,168 @@
+PROYECTO_COLEGIO/
+│
+├── 📄 README.md                    # Descripción corta (inicio)
+├── 📄 INICIO_RAPIDO.txt            # Guía de 5 minutos (LEER PRIMERO)
+├── 📄 INSTALACION.md               # Instalación paso a paso
+├── 📄 INDICE.md                    # Índice de todos los archivos
+├── 📄 EJEMPLO_USO.md               # Ejemplos de API con curl
+├── 📄 DATOS_EJEMPLO.sql            # Script de datos de prueba
+├── 📄 package.json                 # Dependencias NPM
+├── 📄 app.js                       # 🔥 Servidor principal Express
+├── 📄 .env                         # ⚙️ Variables de entorno
+│
+├── 📁 models/                      # Modelos de datos
+│   ├── student.js                  # Modelo Estudiante
+│   ├── teacher.js                  # Modelo Profesor
+│   ├── grade.js                    # Modelo Calificación
+│   └── removedStudent.js           # Modelo Estudiante Eliminado
+│
+├── 📁 routes/                      # 🛣️ Rutas API (endpoints)
+│   ├── auth.js                     # Login/Registro (profesor y estudiante)
+│   ├── students.js                 # CRUD de estudiantes
+│   ├── teachers.js                 # CRUD de profesores
+│   ├── grades.js                   # CRUD de calificaciones
+│   └── assistant.js                # 🤖 Asistente IA (Gemini/OpenAI)
+│
+├── 📁 public/                      # 🌐 Frontend - Archivos estáticos
+│   │
+│   ├── 📁 html/                    # Páginas HTML
+│   │   ├── login.html              # 🔐 Página de login (entrada)
+│   │   ├── teacher-portal.html     # 👨‍🏫 Portal del profesor
+│   │   ├── student-portal.html     # 👨‍🎓 Portal del estudiante
+│   │   └── index.html              # Panel antiguo (opcional)
+│   │
+│   ├── 📁 css/                     # Estilos
+│   │   └── styles.css              # 🎨 Estilos responsivos (~450 líneas)
+│   │
+│   └── 📁 js/                      # Scripts JavaScript
+│       ├── login.js                # Lógica de autenticación
+│       ├── teacher.js              # Funciones portal profesor
+│       ├── student.js              # Funciones portal estudiante
+│       └── main.js                 # Script antiguo (opcional)
+│
+├── 📁 data/                        # 🗄️ Base de datos (creada automáticamente)
+│   └── school.db                   # Base de datos SQLite
+│
+└── 📁 docs/                        # 📚 Documentación
+    ├── README.md                   # Descripción detallada
+    ├── REQUISITOS.md               # Requisitos funcionales y no funcionales
+    ├── API.md                      # Documentación de endpoints
+    └── THUNDER_CLIENT.json         # Colección para Thunder Client
+
+═══════════════════════════════════════════════════════════════
+
+🎯 ARCHIVO PARA EMPEZAR: INICIO_RAPIDO.txt
+
+Ahí encontrarás todos los pasos necesarios para:
+  1. Instalar
+  2. Configurar
+  3. Iniciar
+  4. Crear usuario
+  5. Usar el sistema
+
+═══════════════════════════════════════════════════════════════
+
+🔗 FLUJO DE NAVEGACIÓN
+
+http://localhost:3000
+       ↓
+    [login.html]  ← Página principal
+    ↙         ↘
+Profesor    Estudiante
+   ↓            ↓
+[teacher-portal.html]  [student-portal.html]
+
+═══════════════════════════════════════════════════════════════
+
+📊 BASE DE DATOS (SQLite)
+
+TABLAS:
+  • students (estudiantes activos)
+    - id, firstName, lastName, grade, gradeCategory
+    - documentNumber, password, email, phone
+  
+  • teachers (profesores)
+    - id, firstName, lastName, email
+    - documentNumber, password, gradeAssigned, subject
+  
+  • grades (calificaciones)
+    - id, studentId, teacherId, subject
+    - score (0-5), quarter (1-4), period (año)
+  
+  • removed_students (borrado pasivo)
+    - Copia de datos del estudiante al eliminarlo
+
+═══════════════════════════════════════════════════════════════
+
+🔌 ENDPOINTS PRINCIPALES
+
+AUTENTICACIÓN:
+  POST /api/auth/teacher/login          ← Login profesor
+  POST /api/auth/student/login          ← Login estudiante
+  POST /api/auth/teacher/register       ← Registrar profesor
+  POST /api/auth/student/register       ← Registrar estudiante
+
+ESTUDIANTES:
+  GET    /api/students                  ← Obtener todos
+  GET    /api/students/:id              ← Obtener uno
+  POST   /api/students                  ← Crear
+  PUT    /api/students/:id              ← Actualizar
+  DELETE /api/students/:id              ← Eliminar (pasivo)
+
+PROFESORES:
+  GET    /api/teachers                  ← Obtener todos
+  POST   /api/teachers                  ← Crear
+  PUT    /api/teachers/:id              ← Actualizar
+  DELETE /api/teachers/:id              ← Eliminar
+
+CALIFICACIONES:
+  GET    /api/grades/student/:id        ← Notas del estudiante
+  GET    /api/grades/teacher/:id        ← Notas del profesor
+  POST   /api/grades                    ← Crear calificación
+  PUT    /api/grades/:id                ← Actualizar
+  DELETE /api/grades/:id                ← Eliminar
+
+ASISTENTE IA:
+  POST   /api/assistant/ask             ← Consultar IA
+
+═══════════════════════════════════════════════════════════════
+
+🛠️ TECNOLOGÍA USADA
+
+Backend:
+  • Node.js + Express.js (servidor)
+  • SQLite3 (base de datos)
+  • JWT (autenticación)
+  • Bcrypt (encriptación)
+
+Frontend:
+  • HTML5 (estructura)
+  • CSS3 (estilos responsivos)
+  • JavaScript Vanilla (interactividad)
+
+IA:
+  • Gemini API
+  • OpenAI API
+
+═══════════════════════════════════════════════════════════════
+
+✅ FUNCIONALIDADES COMPLETADAS
+
+✓ Autenticación con JWT
+✓ Registro de usuarios (profesor y estudiante)
+✓ CRUD de estudiantes
+✓ CRUD de profesores
+✓ Gestión de calificaciones
+✓ Tabla interactiva de notas
+✓ Borrado pasivo (historial)
+✓ Integración con IA
+✓ Portales específicos por rol
+✓ Validación de datos
+✓ Base de datos persistente
+✓ Interfaz responsive
+✓ Documentación completa
+
+═══════════════════════════════════════════════════════════════
+
+Creado: Abril 23, 2026
+Versión: 1.0.0

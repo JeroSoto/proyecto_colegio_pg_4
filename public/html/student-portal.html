@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Estudiante - Colegio</title>
+  <link rel="stylesheet" href="../css/modern-css/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div>
+      <h2>Portal del Estudiante</h2>
+      <p class="navbar-subtitle">Consulta tus calificaciones, cursos y materiales compartidos.</p>
+    </div>
+    <div class="navbar-right">
+      <span id="student-name"></span>
+      <button id="theme-toggle" type="button">Cambiar tema</button>
+      <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <div class="page-grid">
+    <aside class="side-panel">
+      <div class="profile-card">
+        <p class="eyebrow">Estudiante</p>
+        <h3 id="student-name-side"></h3>
+        <p>Grado <strong id="student-grade"></strong></p>
+        <p>Categoría <strong id="student-category"></strong></p>
+      </div>
+      <nav class="panel-menu">
+        <button class="menu-button active" data-section="dashboard">Tablero</button>
+        <button class="menu-button" data-section="courses">Mis cursos</button>
+        <button class="menu-button" data-section="documents">Documentos</button>
+        <button class="menu-button" data-section="assistant">Asistente IA</button>
+      </nav>
+    </aside>
+
+    <main class="content-panel">
+      <section id="dashboard-section" class="panel-section active">
+        <div class="card grid-cards">
+          <div>
+            <h3>Bienvenido</h3>
+            <p>Revisa tus últimas calificaciones y recursos publicados por tus profesores.</p>
+          </div>
+          <div>
+            <h3>Trimestres recientes</h3>
+            <p>Selecciona un tema para verlo en detalle.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Últimas calificaciones</h3>
+          <div id="grades-display"></div>
+        </div>
+      </section>
+
+      <section id="courses-section" class="panel-section">
+        <div class="card">
+          <h3>Mis cursos</h3>
+          <div id="courses-list"></div>
+        </div>
+      </section>
+
+      <section id="documents-section" class="panel-section">
+        <div class="card">
+          <h3>Documentos de profesores</h3>
+          <div id="documents-list"></div>
+        </div>
+      </section>
+
+      <section id="assistant-section" class="panel-section">
+        <div class="assistant-banner">
+          <h3>Asistente IA</h3>
+          <p>Pide consejos de estudio o aclaraciones sobre tus materias.</p>
+          <form id="assistant-form">
+            <textarea placeholder="Escribe tu pregunta aquí..." required></textarea>
+            <button type="submit">Consultar</button>
+          </form>
+          <div id="assistant-answer" class="answer-box"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/student.js"></script>
+  <script src="../js/theme.js"></script>
+</body>
+</html>
