@@ -1,38 +1,36 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Grade = sequelize.define('Grade', {
-  studentId: {
+const Schedule = sequelize.define('Schedule', {
+  id: {
     type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  day: {
+    type: DataTypes.ENUM('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'),
     allowNull: false
   },
-  teacherId: {
-    type: DataTypes.INTEGER,
+  startTime: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  endTime: {
+    type: DataTypes.STRING,
     allowNull: false
   },
   subject: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  score: {
-    type: DataTypes.DECIMAL(3, 1),
-    allowNull: false
-  },
-  quarter: {
+  grade: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  period: {
+  teacherId: {
     type: DataTypes.INTEGER,
     allowNull: false
-  },
-  observations: {
-    type: DataTypes.TEXT,
-    allowNull: true
   }
-}, {
-  tableName: 'grades',
-  timestamps: true
 });
 
-module.exports = Grade;
+module.exports = Schedule;

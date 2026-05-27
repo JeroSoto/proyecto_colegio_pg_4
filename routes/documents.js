@@ -1,52 +1,63 @@
 const express = require('express');
 
-module.exports = (db) => {
+module.exports = (models) => {
   const router = express.Router();
+  const { Document, Student, Teacher } = models;
 
-  router.get('/student/:studentId', (req, res) => {
+  router.get('/student/:studentId', async (req, res) => {
     const { studentId } = req.params;
-    const sql = `SELECT d.id, d.title, d.description, d.url, d.createdAt,
-                        t.firstName as teacherFirstName, t.lastName as teacherLastName
-                 FROM documents d
-                 JOIN teachers t ON d.teacherId = t.id
-                 WHERE d.studentId = ?
-                 ORDER BY d.createdAt DESC`;
-
-    db.all(sql, [studentId], (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows || []);
-    });
+    try {
+      const rows = await Document.findAll({
+        where: { studentId },
+        include: [{
+          model: Teacher,
+          as: 'teacher',
+          attributes: ['firstName', 'lastName']
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.get('/teacher/:teacherId', (req, res) => {
+  router.get('/teacher/:teacherId', async (req, res) => {
     const { teacherId } = req.params;
-    const sql = `SELECT d.id, d.title, d.description, d.url, d.createdAt,
-                        s.firstName as studentFirstName, s.lastName as studentLastName
-                 FROM documents d
-                 JOIN students s ON d.studentId = s.id
-                 WHERE d.teacherId = ?
-                 ORDER BY d.createdAt DESC`;
-
-    db.all(sql, [teacherId], (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows || []);
-    });
+    try {
+      const rows = await Document.findAll({
+        where: { teacherId },
+        include: [{
+          model: Student,
+          as: 'student',
+          attributes: ['firstName', 'lastName']
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.post('/', (req, res) => {
+  router.post('/', async (req, res) => {
     const { studentId, teacherId, title, description, url } = req.body;
     if (!studentId || !teacherId || !title) {
       return res.status(400).json({ error: 'studentId, teacherId y title son requeridos' });
     }
 
-    const sql = `INSERT INTO documents (studentId, teacherId, title, description, url)
-                 VALUES (?, ?, ?, ?, ?)`;
-    const params = [studentId, teacherId, title, description || '', url || ''];
-
-    db.run(sql, params, function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id: this.lastID, studentId, teacherId, title, description, url });
-    });
+    try {
+      const doc = await Document.create({
+        studentId,
+        teacherId,
+        title,
+        description: description || '',
+        url: url || ''
+      });
+      res.status(201).json(doc);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;

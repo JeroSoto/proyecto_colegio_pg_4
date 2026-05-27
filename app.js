@@ -1,41 +1,41 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const cors = require('cors');
+
+// Importar modelos de Sequelize
+const models = require('./models');
+
+// Importar rutas
 const studentRoutes = require('./routes/students');
 const teacherRoutes = require('./routes/teachers');
 const gradeRoutes = require('./routes/grades');
 const authRoutes = require('./routes/auth');
 const assistantRoutes = require('./routes/assistant');
 const documentRoutes = require('./routes/documents');
+const courseRoutes = require('./routes/courses');
+const parentRoutes = require('./routes/parents');
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
-const DATABASE_FILE = process.env.DATABASE_FILE || './data/school.db';
-
-const dataDir = path.dirname(DATABASE_FILE);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-const db = new sqlite3.Database(DATABASE_FILE, (err) => {
-  if (err) {
-    console.error('Error al conectar la base de datos:', err);
-    process.exit(1);
-  }
-  console.log('Conectado a la base de datos SQLite en', DATABASE_FILE);
-});
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Middleware de Logs
+app.use((req, res, next) => {
+  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Middleware de autenticación
 const authMiddleware = (req, res, next) => {
   const authorization = req.headers.authorization || '';
   const token = authorization.split(' ')[1];
@@ -52,108 +52,56 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Pasar modelos a cada request si es necesario
 app.use((req, res, next) => {
-  req.db = db;
+  req.models = models;
   next();
 });
 
-const initTables = () => {
-  db.serialize(() => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        firstName TEXT NOT NULL,
-        lastName TEXT NOT NULL,
-        grade INTEGER NOT NULL,
-        gradeCategory TEXT NOT NULL,
-        documentType TEXT,
-        documentNumber TEXT NOT NULL UNIQUE,
-        email TEXT,
-        phone TEXT,
-        password TEXT NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS teachers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        firstName TEXT NOT NULL,
-        lastName TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        documentNumber TEXT,
-        password TEXT NOT NULL,
-        gradeAssigned INTEGER NOT NULL,
-        subject TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS grades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        studentId INTEGER NOT NULL,
-        teacherId INTEGER NOT NULL,
-        subject TEXT NOT NULL,
-        score DECIMAL(3,1) NOT NULL,
-        quarter INTEGER NOT NULL,
-        period INTEGER NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(studentId) REFERENCES students(id),
-        FOREIGN KEY(teacherId) REFERENCES teachers(id)
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS removed_students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        studentId INTEGER,
-        firstName TEXT NOT NULL,
-        lastName TEXT NOT NULL,
-        grade INTEGER NOT NULL,
-        gradeCategory TEXT NOT NULL,
-        documentType TEXT,
-        documentNumber TEXT,
-        email TEXT,
-        phone TEXT,
-        removedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS documents (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        studentId INTEGER NOT NULL,
-        teacherId INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT,
-        url TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(studentId) REFERENCES students(id),
-        FOREIGN KEY(teacherId) REFERENCES teachers(id)
-      )
-    `);
-  });
-};
-
-initTables();
-
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Servidor activo' });
+  res.json({ status: 'ok', message: 'Servidor activo con Sequelize' });
 });
 
-app.use('/api/auth', authRoutes(db, bcrypt, jwt));
-app.use('/api/students', authMiddleware, studentRoutes(db));
-app.use('/api/teachers', authMiddleware, teacherRoutes(db));
-app.use('/api/grades', authMiddleware, gradeRoutes(db));
-app.use('/api/documents', authMiddleware, documentRoutes(db));
-app.use('/api/assistant', authMiddleware, assistantRoutes());
+// Registrar rutas inyectando los modelos
+const scheduleRoutes = require('./routes/schedules');
+
+app.use('/api/auth', authRoutes(models, bcrypt, jwt));
+app.use('/api/students', authMiddleware, studentRoutes(models));
+app.use('/api/teachers', authMiddleware, teacherRoutes(models));
+app.use('/api/grades', authMiddleware, gradeRoutes(models));
+app.use('/api/documents', authMiddleware, documentRoutes(models));
+app.use('/api/assistant', assistantRoutes()); // Público para que todos puedan usarlo
+app.use('/api/courses', authMiddleware, courseRoutes(models));
+app.use('/api/parents', authMiddleware, parentRoutes(models));
+app.use('/api/schedules', authMiddleware, scheduleRoutes(models));
+
+// Manejador de errores global para la API
+app.use((err, req, res, next) => {
+  console.error('🔥 Error detectado:', err.stack);
+  res.status(500).json({ 
+    error: 'Error interno del servidor', 
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.json({});
+});
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'html', 'index.html'));
+  res.sendFile(path.resolve(__dirname, 'public', 'html', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-});
+// Sincronización de Base de Datos e inicio del servidor
+models.sequelize.sync()
+  .then(() => {
+    console.log('Base de datos sincronizada correctamente.');
+    app.listen(PORT, () => {
+      console.log(`Servidor en http://localhost:${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Error al sincronizar la base de datos:', err);
+    console.log('Asegúrate de que el archivo database.sqlite se pueda crear.');
+  });

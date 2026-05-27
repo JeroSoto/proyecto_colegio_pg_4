@@ -1,65 +1,84 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 
-module.exports = (db) => {
+module.exports = (models) => {
   const router = express.Router();
+  const { Teacher } = models;
 
-  router.get('/', (req, res) => {
-    db.all('SELECT * FROM teachers ORDER BY lastName, firstName', (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
+  router.get('/', async (req, res) => {
+    try {
+      const rows = await Teacher.findAll({
+        order: [['lastName', 'ASC'], ['firstName', 'ASC']]
+      });
       res.json(rows);
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.get('/:id', (req, res) => {
+  router.get('/:id', async (req, res) => {
     const { id } = req.params;
-    db.get('SELECT * FROM teachers WHERE id = ?', [id], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
+    try {
+      const row = await Teacher.findByPk(id);
       if (!row) return res.status(404).json({ error: 'Profesor no encontrado' });
       res.json(row);
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   router.post('/', async (req, res) => {
     const { firstName, lastName, email, documentNumber, password, gradeAssigned, subject } = req.body;
-    const bcrypt = require('bcrypt');
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const sql = `INSERT INTO teachers (firstName, lastName, email, documentNumber, password, gradeAssigned, subject)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`;
-      const params = [firstName, lastName, email, documentNumber, hashedPassword, gradeAssigned, subject];
-
-      db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, firstName, lastName, email, gradeAssigned, subject });
+      const teacher = await Teacher.create({
+        firstName,
+        lastName,
+        email,
+        documentNumber,
+        password: hashedPassword,
+        gradeAssigned,
+        subject
       });
+      res.status(201).json(teacher);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  router.put('/:id', (req, res) => {
+  router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { firstName, lastName, email, gradeAssigned, subject } = req.body;
 
-    const sql = `UPDATE teachers SET firstName = ?, lastName = ?, email = ?, gradeAssigned = ?, subject = ? WHERE id = ?`;
-    const params = [firstName, lastName, email, gradeAssigned, subject, id];
+    try {
+      const teacher = await Teacher.findByPk(id);
+      if (!teacher) return res.status(404).json({ error: 'Profesor no encontrado' });
 
-    db.run(sql, params, function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: 'Profesor no encontrado' });
-      res.json({ id: Number(id), firstName, lastName, email, gradeAssigned, subject });
-    });
+      await teacher.update({
+        firstName,
+        lastName,
+        email,
+        gradeAssigned,
+        subject
+      });
+      res.json(teacher);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', async (req, res) => {
     const { id } = req.params;
+    try {
+      const teacher = await Teacher.findByPk(id);
+      if (!teacher) return res.status(404).json({ error: 'Profesor no encontrado' });
 
-    db.run('DELETE FROM teachers WHERE id = ?', [id], function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: 'Profesor no encontrado' });
+      await teacher.destroy();
       res.json({ message: 'Profesor eliminado' });
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;

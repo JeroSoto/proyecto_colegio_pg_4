@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Académico | Impresión Oficio</title>
+    <style>
+        :root {
+            --primary: #000;
+        }
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+        }
+        .report-page {
+            width: 216mm; /* Ancho Oficio */
+            min-height: 330mm; /* Alto Oficio */
+            padding: 20mm;
+            margin: 10mm auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            position: relative;
+        }
+        header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .school-info h1 { font-size: 24pt; margin: 0; }
+        .school-info p { margin: 2px 0; font-size: 10pt; }
+        
+        .student-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 11pt;
+        }
+        .data-box {
+            border: 1px solid #000;
+            padding: 5px 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+            font-size: 10pt;
+        }
+        th { background: #f2f2f2; }
+        
+        .footer {
+            position: absolute;
+            bottom: 20mm;
+            left: 20mm;
+            right: 20mm;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+        .signature {
+            border-top: 1px solid #000;
+            width: 40%;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 10pt;
+        }
+        
+        @media print {
+            body { background: none; }
+            .report-page {
+                margin: 0;
+                box-shadow: none;
+            }
+            .no-print { display: none; }
+        }
+        
+        .no-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .btn-print {
+            background: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ Imprimir Reporte (Oficio)</button>
+        <button class="btn-print" style="background: #6b7280;" onclick="history.back()">Volver</button>
+    </div>
+
+    <div class="report-page">
+        <header>
+            <div class="school-info">
+                <h1>INSTITUCIÓN EDUCATIVA INTEGRAL</h1>
+                <p>Resolución Departamental No. 1234 - NIT: 900.800.700-1</p>
+                <p>Dirección: Calle Principal #123 - Ciudad Escolar</p>
+                <h2>INFORME ACADÉMICO PERIÓDICO</h2>
+            </div>
+        </header>
+
+        <div class="student-data">
+            <div class="data-box"><strong>Estudiante:</strong> <span id="student-name">...</span></div>
+            <div class="data-box"><strong>Documento:</strong> <span id="student-doc">...</span></div>
+            <div class="data-box"><strong>Grado:</strong> <span id="student-grade">...</span></div>
+            <div class="data-box"><strong>Año Lectivo:</strong> 2026</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ÁREA / ASIGNATURA</th>
+                    <th>PERIODO</th>
+                    <th>VALORACIÓN</th>
+                    <th>DESEMPEÑO</th>
+                    <th>OBSERVACIONES</th>
+                </tr>
+            </thead>
+            <tbody id="grades-tbody">
+                <!-- Dinámico -->
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="signature">
+                Director(a) de Grupo
+            </div>
+            <div class="signature">
+                Rectoría
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('studentId');
+        const token = localStorage.getItem('token');
+
+        async function loadReport() {
+            try {
+                // Si es un padre, usa la ruta de padres, si es director/profe usa la normal
+                const user = JSON.parse(localStorage.getItem('teacher') || localStorage.getItem('parent') || localStorage.getItem('student'));
+                let endpoint = `/api/students/${studentId}`;
+                
+                if (user && !user.role && localStorage.getItem('parent')) {
+                    endpoint = `/api/parents/report/${studentId}`;
+                }
+
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                document.getElementById('student-name').textContent = `${data.firstName} ${data.lastName}`;
+                document.getElementById('student-doc').textContent = data.documentNumber;
+                document.getElementById('student-grade').textContent = data.grade + "°";
+
+                const tbody = document.getElementById('grades-tbody');
+                
+                // Si data.grades no viene (depende del endpoint), hay que manejarlo
+                const grades = data.grades || [];
+                
+                tbody.innerHTML = '';
+                grades.forEach(g => {
+                    const tr = document.createElement('tr');
+                    const performance = g.score >= 4.5 ? 'SUPERIOR' : g.score >= 4.0 ? 'ALTO' : g.score >= 3.0 ? 'BÁSICO' : 'BAJO';
+                    tr.innerHTML = `
+                        <td>${g.subject}</td>
+                        <td>${g.quarter}</td>
+                        <td>${g.score}</td>
+                        <td>${performance}</td>
+                        <td>${g.observations || 'Sin observaciones'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                if (grades.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay calificaciones registradas para este periodo.</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al cargar el reporte');
+            }
+        }
+
+        loadReport();
+    </script>
+</body>
+</html>

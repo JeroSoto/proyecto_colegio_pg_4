@@ -1,268 +1,267 @@
-let teacherData = null;
-let studentsGrades = [];
-let teacherDocuments = [];
-
-function switchSection(section) {
-  document.querySelectorAll('.panel-section').forEach(panel => panel.classList.remove('active'));
-  document.querySelectorAll('.menu-button').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(`${section}-section`).classList.add('active');
-  document.querySelector(`.menu-button[data-section="${section}"]`).classList.add('active');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('token');
-  if (!token) window.location.href = '/login.html';
+  const userId = localStorage.getItem('userId');
+  if (!token) window.location.href = '/html/index.html';
 
-  document.querySelectorAll('.menu-button').forEach(button => {
-    button.addEventListener('click', () => switchSection(button.dataset.section));
+  let currentTeacher = null;
+
+  // Navegación de secciones
+  const navButtons = document.querySelectorAll('.nav-btn');
+  const sections = document.querySelectorAll('.section-content');
+
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.section;
+      if (!target) return;
+      
+      navButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      sections.forEach(s => s.classList.add('hidden'));
+      const targetSection = document.getElementById(`${target}-section`);
+      if (targetSection) targetSection.classList.remove('hidden');
+      
+      document.getElementById('section-title').innerText = btn.innerText.replace(/[^\w\s]/gi, '').trim();
+
+      if (target === 'removed') fetchRemovedStudents(token);
+    });
   });
 
-  loadTeacherData();
-  loadStudentsAndGrades();
-  loadTeacherDocuments();
+  // Cargar perfil
+  try {
+    const res = await fetch(`/api/teachers/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (res.ok) {
+        currentTeacher = await res.json();
+    } else {
+        // Fallback al objeto guardado en login
+        currentTeacher = JSON.parse(localStorage.getItem('teacher'));
+    }
+    
+    if (currentTeacher) {
+        document.getElementById('teacher-name-side').innerText = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
+        document.getElementById('teacher-meta').innerText = `${currentTeacher.subject} | Grado ${currentTeacher.gradeAssigned}`;
+        
+        document.getElementById('assigned-grade-card').innerText = currentTeacher.gradeAssigned || '--';
+        document.getElementById('assigned-subject-card').innerText = currentTeacher.subject || '--';
+        if (document.getElementById('assistant-grade-hint')) {
+            document.getElementById('assistant-grade-hint').innerText = currentTeacher.gradeAssigned;
+        }
 
-  document.getElementById('quarter-select').addEventListener('change', loadStudentsAndGrades);
-  document.getElementById('assistant-form').addEventListener('submit', handleAssistantQuery);
-  document.getElementById('document-form').addEventListener('submit', handleDocumentUpload);
+        fetchStudents(currentTeacher.gradeAssigned, token);
+        fetchDocuments(currentTeacher.id, token);
+        fetchSchedule(currentTeacher.id, token, 'teacher');
+    }
+  } catch (err) {
+    console.error('Error cargando perfil:', err);
+    // Re-intento con localstorage
+    currentTeacher = JSON.parse(localStorage.getItem('teacher'));
+    if (currentTeacher) {
+        document.getElementById('teacher-name-side').innerText = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
+    }
+  }
+
+  // Asistente IA
+  const assistantForm = document.getElementById('assistant-form');
+  assistantForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('assistant-input');
+    const chat = document.getElementById('assistant-chat');
+    const question = input.value;
+    
+    chat.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`;
+    input.value = '';
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+        const res = await fetch('/api/assistant/ask', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ question, context: `Soy profesor de ${currentTeacher.subject} en grado ${currentTeacher.gradeAssigned}` })
+          });
+          const data = await res.json();
+          chat.innerHTML += `<div class="chat-bubble bubble-ai">${data.answer || data.error || 'Lo siento, no pude procesar tu consulta.'}</div>`;
+    } catch (err) {
+        chat.innerHTML += `<div class="chat-bubble bubble-ai">Error de conexión con el servicio de IA.</div>`;
+    }
+    chat.scrollTop = chat.scrollHeight;
+  });
 });
 
-async function loadTeacherData() {
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-
-  try {
-    const response = await fetch(`/api/teachers/${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    teacherData = data;
-
-    const fullName = `${data.firstName} ${data.lastName}`;
-    document.getElementById('teacher-name').textContent = fullName;
-    document.getElementById('teacher-name-side').textContent = fullName;
-    document.getElementById('assigned-grade').textContent = data.gradeAssigned;
-    document.getElementById('assigned-subject').textContent = data.subject;
-    document.getElementById('assigned-grade-card').textContent = `Grado ${data.gradeAssigned}`;
-    document.getElementById('assigned-subject-card').textContent = data.subject;
-  } catch (error) {
-    console.error('Error cargando datos del profesor:', error);
-  }
-}
-
-async function loadStudentsAndGrades() {
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-  const quarter = parseInt(document.getElementById('quarter-select').value, 10);
-
-  try {
-    const response = await fetch(`/api/grades/teacher/${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    const grades = await response.json();
-    studentsGrades = Array.isArray(grades) ? grades.filter(g => g.quarter === quarter) : [];
-    renderGradesTable();
-    renderSummary();
-  } catch (error) {
-    console.error('Error cargando calificaciones:', error);
-  }
-}
-
-async function loadTeacherDocuments() {
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-
-  try {
-    const response = await fetch(`/api/documents/teacher/${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    teacherDocuments = await response.json();
-    renderDocuments();
-    document.getElementById('docs-count').textContent = teacherDocuments.length;
-    renderSummary();
-  } catch (error) {
-    console.error('Error cargando documentos:', error);
-  }
-}
-
-function renderGradesTable() {
-  const tableBody = document.getElementById('table-body');
-  tableBody.innerHTML = '';
-
-  if (!Array.isArray(studentsGrades) || studentsGrades.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="3">No hay calificaciones registradas para este trimestre.</td></tr>';
-    return;
-  }
-
-  const grouped = {};
-  studentsGrades.forEach(record => {
-    if (!grouped[record.studentId]) {
-      grouped[record.studentId] = record;
-    }
+async function fetchStudents(grade, token) {
+  const res = await fetch(`/api/students?grade=${grade}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
   });
-
-  Object.values(grouped).forEach(student => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${student.studentFirstName} ${student.studentLastName}</td>
-      <td>${student.documentNumber || '-'}</td>
+  const students = await res.json();
+  document.getElementById('students-count').innerText = students.length;
+  
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = students.map(s => `
+    <tr>
+      <td><strong>${s.firstName} ${s.lastName}</strong></td>
+      <td><code style="font-size: 0.8rem;">${s.documentNumber}</code></td>
       <td>
-        <input type="number" 
-               class="grade-input" 
-               data-grade-id="${student.id || ''}" 
-               data-student-id="${student.studentId}" 
-               min="0" 
-               max="5" 
-               step="0.1"
-               value="${typeof student.score === 'number' ? student.score : ''}" 
-               placeholder="0.0" />
+        <input type="number" class="grade-input" step="0.1" min="0" max="5" 
+               data-student-id="${s.id}" 
+               placeholder="0.0"
+               style="width: 80px;">
       </td>
-    `;
-    tableBody.appendChild(row);
-  });
-}
-
-function renderSummary() {
-  const uniqueStudentIds = new Set(studentsGrades.map(item => item.studentId));
-  document.getElementById('students-count').textContent = uniqueStudentIds.size;
-}
-
-function renderDocuments() {
-  const container = document.getElementById('documents-list');
-  if (!Array.isArray(teacherDocuments) || teacherDocuments.length === 0) {
-    container.innerHTML = '<p>No hay documentos publicados todavía.</p>';
-    return;
-  }
-
-  container.innerHTML = teacherDocuments.map(doc => `
-    <div class="document-item">
-      <div>
-        <h4>${doc.title}</h4>
-        <p>${doc.description || 'Sin descripción'}</p>
-        <p class="meta">Para: ${doc.studentFirstName} ${doc.studentLastName} • ${new Date(doc.createdAt).toLocaleDateString()}</p>
-      </div>
-      ${doc.url ? `<a href="${doc.url}" target="_blank">Ver enlace</a>` : ''}
-    </div>
+      <td>
+        <input type="text" class="obs-input" 
+               data-student-id="${s.id}" 
+               placeholder="Comentario..."
+               style="width: 100%;">
+      </td>
+      <td>
+        <button onclick="deleteStudent(${s.id})" class="btn-logout" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-width: 1px;">Borrar</button>
+      </td>
+    </tr>
   `).join('');
 }
 
-async function handleDocumentUpload(e) {
-  e.preventDefault();
+async function deleteStudent(id) {
+  if (!confirm('¿Estás seguro de que deseas eliminar a este estudiante? Se moverá a la papelera.')) return;
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-  const studentId = document.getElementById('doc-student-id').value.trim();
-  const title = document.getElementById('doc-title').value.trim();
-  const description = document.getElementById('doc-description').value.trim();
-  const url = document.getElementById('doc-url').value.trim();
-
-  if (!studentId || !title) {
-    alert('Ingrese el ID del estudiante y el título del documento.');
-    return;
-  }
-
   try {
-    const response = await fetch('/api/documents', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ studentId: parseInt(studentId, 10), teacherId: parseInt(userId, 10), title, description, url })
+    const res = await fetch(`/api/students/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'No se pudo subir el documento');
+    if (res.ok) {
+        alert('Estudiante eliminado correctamente.');
+        location.reload();
     }
-
-    document.getElementById('document-form').reset();
-    loadTeacherDocuments();
-    alert('Documento enviado correctamente.');
-  } catch (error) {
-    alert(`Error: ${error.message}`);
+  } catch (err) {
+    console.error(err);
   }
+}
+
+async function fetchRemovedStudents(token) {
+    try {
+        const res = await fetch('/api/students/removed', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const students = await res.json();
+        const tbody = document.getElementById('removed-table-body');
+        tbody.innerHTML = students.map(s => `
+            <tr>
+                <td>${s.firstName} ${s.lastName}</td>
+                <td>${s.documentNumber}</td>
+                <td>${s.grade}</td>
+                <td>${new Date(s.removedAt).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 async function saveAllGrades() {
   const token = localStorage.getItem('token');
-  const quarter = parseInt(document.getElementById('quarter-select').value, 10);
+  const userId = localStorage.getItem('userId');
+  const quarter = document.getElementById('quarter-select').value;
   const gradeInputs = document.querySelectorAll('.grade-input');
-  const gradesToUpdate = [];
-  const gradesToCreate = [];
+  const obsInputs = document.querySelectorAll('.obs-input');
+  
+  const results = [];
+  const teacherProfile = await (await fetch(`/api/teachers/${userId}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })).json();
 
-  gradeInputs.forEach(input => {
-    const score = parseFloat(input.value);
-    const gradeId = input.dataset.gradeId;
-    const studentId = input.dataset.studentId;
+  for (let i = 0; i < gradeInputs.length; i++) {
+    const score = gradeInputs[i].value;
+    const studentId = gradeInputs[i].dataset.studentId;
+    const observations = obsInputs[i].value;
 
-    if (!Number.isFinite(score) || score < 0 || score > 5) return;
+    if (!score) continue;
 
-    if (gradeId) {
-      gradesToUpdate.push({ id: parseInt(gradeId, 10), score, quarter });
-    } else {
-      gradesToCreate.push({ studentId: parseInt(studentId, 10), teacherId: parseInt(localStorage.getItem('userId'), 10), subject: teacherData?.subject || 'General', score, quarter, period: new Date().getFullYear() });
-    }
-  });
-
-  try {
-    for (const grade of gradesToCreate) {
-      await fetch('/api/grades', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(grade)
-      });
-    }
-
-    for (const grade of gradesToUpdate) {
-      await fetch(`/api/grades/${grade.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ score: grade.score, quarter: grade.quarter })
-      });
-    }
-
-    alert('Calificaciones guardadas exitosamente.');
-    loadStudentsAndGrades();
-  } catch (error) {
-    console.error('Error guardando calificaciones:', error);
-    alert('Error al guardar calificaciones.');
-  }
-}
-
-async function handleAssistantQuery(e) {
-  e.preventDefault();
-  const token = localStorage.getItem('token');
-  const question = e.target.querySelector('textarea').value;
-  const answerDiv = document.getElementById('assistant-answer');
-
-  try {
-    const response = await fetch('/api/assistant/ask', {
+    results.push(fetch('/api/grades', {
       method: 'POST',
-      headers: {
+      headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ question })
-    });
+      body: JSON.stringify({
+        studentId,
+        teacherId: userId,
+        subject: teacherProfile.subject,
+        score,
+        quarter,
+        period: new Date().getFullYear(),
+        observations
+      })
+    }));
+  }
 
-    const data = await response.json();
-    answerDiv.innerHTML = `<p><strong>Respuesta:</strong></p><p>${data.answer || data.error}</p>`;
-    e.target.reset();
-  } catch (error) {
-    answerDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+  try {
+    await Promise.all(results);
+    alert('✅ Calificaciones y observaciones guardadas exitosamente.');
+  } catch (err) {
+    alert('❌ Error al guardar algunas calificaciones.');
   }
 }
 
+async function fetchDocuments(teacherId, token) {
+  const res = await fetch(`/api/documents/teacher/${teacherId}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const docs = await res.json();
+  const container = document.getElementById('documents-list');
+  
+  if (docs.length === 0) {
+    container.innerHTML = '<p class="text-muted">No has publicado documentos aún.</p>';
+    return;
+  }
+
+  container.innerHTML = docs.map(d => `
+    <div class="card" style="padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong style="color: var(--primary);">${d.title}</strong>
+        <p style="font-size: 0.8rem; margin: 0; color: var(--text-muted);">Para: ${d.studentId ? 'Estudiante ID ' + d.studentId : 'Todo el curso'}</p>
+      </div>
+      <a href="${d.url}" target="_blank" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; text-decoration: none;">Ver</a>
+    </div>
+  `).join('');
+}
+
+async function fetchSchedule(id, token, type) {
+    const endpoint = type === 'student' ? `/api/schedules/grade/${id}` : `/api/schedules/teacher/${id}`;
+    const res = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const schedule = await res.json();
+    const tbody = document.getElementById('schedule-body');
+    if (!tbody) return;
+
+    // Organizar por slots de tiempo
+    const slots = ['07:00', '08:30', '10:30', '12:00'];
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+    let html = '';
+    slots.forEach(slot => {
+        html += `<tr><td><strong>${slot}</strong></td>`;
+        days.forEach(day => {
+            const entry = schedule.find(s => s.day === day && s.startTime === slot);
+            if (entry) {
+                html += `<td style="background: rgba(16, 185, 129, 0.05); text-align: center;">
+                    <div style="font-weight: 700; color: var(--secondary);">${entry.subject}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">Grado ${entry.grade}°</div>
+                </td>`;
+            } else {
+                html += `<td></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userType');
-  localStorage.removeItem('userId');
-  window.location.href = '/login.html';
+  localStorage.clear();
+  window.location.href = '/html/index.html';
 }

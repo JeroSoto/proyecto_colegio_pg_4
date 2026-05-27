@@ -1,82 +1,101 @@
 const express = require('express');
 
-module.exports = (db, bcrypt, jwt) => {
+module.exports = (models, bcrypt, jwt) => {
   const router = express.Router();
-  const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+  const { Student, Teacher, Parent } = models;
+  const JWT_SECRET = String(process.env.JWT_SECRET || 'secret123');
 
-  router.post('/teacher/login', (req, res) => {
-    const { email, password } = req.body;
+  // LOGIN UNIFICADO (Detección automática de rol)
+  router.post('/login', async (req, res) => {
+    const { identifier, password } = req.body;
+    console.log(`Intento de login unificado para: ${identifier}`);
 
-    db.get('SELECT * FROM teachers WHERE email = ?', [email], async (err, teacher) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!teacher) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+    try {
+      // 1. Buscar en Profesores (por email)
+      let user = await Teacher.findOne({ where: { email: identifier } });
+      let type = 'teacher';
 
-      const validPassword = await bcrypt.compare(password, teacher.password);
-      if (!validPassword) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+      // 2. Si no es profesor, buscar en Padres (por email)
+      if (!user) {
+        user = await Parent.findOne({ where: { email: identifier } });
+        type = 'parent';
+      }
 
-      const token = jwt.sign(
-        { id: teacher.id, type: 'teacher', email: teacher.email, grade: teacher.gradeAssigned },
-        JWT_SECRET,
-        { expiresIn: '8h' }
-      );
+      // 3. Si no es padre, buscar en Estudiantes (por documento)
+      if (!user) {
+        user = await Student.findOne({ where: { documentNumber: identifier } });
+        type = 'student';
+      }
 
-      res.json({
+      if (!user) {
+        console.log('Usuario no encontrado en ninguna tabla');
+        return res.status(401).json({ error: 'Credenciales incorrectas' });
+      }
+
+      // Verificación de contraseña robusta
+      const storedPassword = (user.password || '').trim();
+      const providedPassword = (password || '').trim();
+      let validPassword = false;
+
+      console.log(`Comparando para ${identifier}: Provista[${providedPassword}] vs Guardada[${storedPassword.startsWith('$') ? 'HASHED' : storedPassword}]`);
+
+      if (storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2y$')) {
+        validPassword = await bcrypt.compare(providedPassword, storedPassword);
+      } else {
+        validPassword = (providedPassword === storedPassword);
+      }
+
+      if (!validPassword) {
+        console.log(`❌ Contraseña incorrecta para ${identifier}`);
+        return res.status(401).json({ error: 'Credenciales incorrectas' });
+      }
+
+      // Generar token según el tipo
+      const payload = { id: user.id, type: type };
+      if (type === 'teacher') {
+        payload.email = user.email;
+        payload.role = user.role;
+        payload.grade = user.gradeAssigned;
+      } else if (type === 'parent') {
+        payload.email = user.email;
+      } else {
+        payload.documentNumber = user.documentNumber;
+        payload.grade = user.grade;
+      }
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
+
+      console.log(`Login exitoso: ${user.firstName} (${type})`);
+      
+      return res.json({
         token,
-        teacher: {
-          id: teacher.id,
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          email: teacher.email,
-          gradeAssigned: teacher.gradeAssigned,
-          subject: teacher.subject
+        type,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          documentNumber: user.documentNumber,
+          role: user.role,
+          subject: user.subject,
+          grade: user.grade || user.gradeAssigned
         }
       });
-    });
-  });
 
-  router.post('/student/login', (req, res) => {
-    const { documentNumber, password } = req.body;
-
-    db.get('SELECT * FROM students WHERE documentNumber = ?', [documentNumber], async (err, student) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!student) return res.status(401).json({ error: 'Documento o contraseña incorrectos' });
-
-      const validPassword = await bcrypt.compare(password, student.password);
-      if (!validPassword) return res.status(401).json({ error: 'Documento o contraseña incorrectos' });
-
-      const token = jwt.sign(
-        { id: student.id, type: 'student', documentNumber: student.documentNumber, grade: student.grade },
-        JWT_SECRET,
-        { expiresIn: '8h' }
-      );
-
-      res.json({
-        token,
-        student: {
-          id: student.id,
-          firstName: student.firstName,
-          lastName: student.lastName,
-          documentNumber: student.documentNumber,
-          grade: student.grade,
-          gradeCategory: student.gradeCategory
-        }
-      });
-    });
+    } catch (err) {
+      console.error('Error en login unificado:', err);
+      return res.status(500).json({ error: 'Error interno del servidor' });
+    }
   });
 
   router.post('/teacher/register', async (req, res) => {
     const { firstName, lastName, email, documentNumber, password, gradeAssigned, subject } = req.body;
-
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const sql = `INSERT INTO teachers (firstName, lastName, email, documentNumber, password, gradeAssigned, subject)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`;
-      const params = [firstName, lastName, email, documentNumber, hashedPassword, gradeAssigned, subject];
-
-      db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, firstName, lastName, email, gradeAssigned, subject });
+      const teacher = await Teacher.create({
+        firstName, lastName, email, documentNumber, password: hashedPassword, gradeAssigned, subject
       });
+      res.status(201).json({ id: teacher.id, email: teacher.email });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -84,18 +103,13 @@ module.exports = (db, bcrypt, jwt) => {
 
   router.post('/student/register', async (req, res) => {
     const { firstName, lastName, grade, documentNumber, email, phone, documentType, password } = req.body;
-
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const gradeCategory = grade <= 5 ? 'primaria' : 'secundaria';
-      const sql = `INSERT INTO students (firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone, password)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-      const params = [firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone, hashedPassword];
-
-      db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, firstName, lastName, grade, gradeCategory, documentNumber });
+      const student = await Student.create({
+        firstName, lastName, grade, gradeCategory: Student.getGradeCategory(grade),
+        documentType, documentNumber, email, phone, password: hashedPassword
       });
+      res.status(201).json({ id: student.id, documentNumber: student.documentNumber });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

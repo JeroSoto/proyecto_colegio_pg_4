@@ -1,36 +1,53 @@
 const express = require('express');
-const { getGradeCategory } = require('../models/student');
+const bcrypt = require('bcrypt');
 
-module.exports = (db) => {
+module.exports = (models) => {
   const router = express.Router();
+  const { Student, RemovedStudent } = models;
 
-  router.get('/', (req, res) => {
-    db.all('SELECT * FROM students ORDER BY grade, lastName, firstName', (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
+  router.get('/', async (req, res) => {
+    try {
+      const { grade } = req.query;
+      const whereClause = {};
+      if (grade !== undefined && grade !== '') {
+        whereClause.grade = grade;
+      }
+
+      const rows = await Student.findAll({
+        where: whereClause,
+        order: [['grade', 'ASC'], ['lastName', 'ASC'], ['firstName', 'ASC']]
+      });
       res.json(rows);
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.get('/:id', (req, res) => {
+  router.get('/:id', async (req, res) => {
     const { id } = req.params;
-    db.get('SELECT * FROM students WHERE id = ?', [id], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
+    try {
+      const row = await Student.findByPk(id);
       if (!row) return res.status(404).json({ error: 'Estudiante no encontrado' });
       res.json(row);
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  router.get('/removed', (req, res) => {
-    db.all('SELECT * FROM removed_students ORDER BY removedAt DESC', (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
+  router.get('/removed', async (req, res) => {
+    try {
+      const rows = await RemovedStudent.findAll({
+        order: [['removedAt', 'DESC']]
+      });
       res.json(rows);
-    });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   router.post('/', async (req, res) => {
     const { firstName, lastName, grade, documentType, documentNumber, email, phone, password } = req.body;
-    const bcrypt = require('bcrypt');
-    const gradeCategory = getGradeCategory(grade);
+    const gradeCategory = Student.getGradeCategory(grade);
 
     if (grade < 0 || grade > 11) {
       return res.status(400).json({ error: 'El grado debe estar entre 0 y 11' });
@@ -38,57 +55,77 @@ module.exports = (db) => {
 
     try {
       const hashedPassword = await bcrypt.hash(password || documentNumber, 10);
-      const sql = `INSERT INTO students (firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone, password)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-      const params = [firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone, hashedPassword];
-
-      db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone });
+      const student = await Student.create({
+        firstName,
+        lastName,
+        grade,
+        gradeCategory,
+        documentType,
+        documentNumber,
+        email,
+        phone,
+        password: hashedPassword
       });
+      res.status(201).json(student);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  router.put('/:id', (req, res) => {
+  router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { firstName, lastName, grade, documentType, documentNumber, email, phone } = req.body;
-    const gradeCategory = getGradeCategory(grade);
+    const gradeCategory = Student.getGradeCategory(grade);
 
     if (grade < 0 || grade > 11) {
       return res.status(400).json({ error: 'El grado debe estar entre 0 y 11' });
     }
 
-    const sql = `UPDATE students SET firstName = ?, lastName = ?, grade = ?, gradeCategory = ?, documentType = ?, documentNumber = ?, email = ?, phone = ? WHERE id = ?`;
-    const params = [firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone, id];
-
-    db.run(sql, params, function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: 'Estudiante no encontrado' });
-      res.json({ id: Number(id), firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone });
-    });
-  });
-
-  router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-
-    db.get('SELECT * FROM students WHERE id = ?', [id], (err, student) => {
-      if (err) return res.status(500).json({ error: err.message });
+    try {
+      const student = await Student.findByPk(id);
       if (!student) return res.status(404).json({ error: 'Estudiante no encontrado' });
 
-      const insertSql = `INSERT INTO removed_students (studentId, firstName, lastName, grade, gradeCategory, documentType, documentNumber, email, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-      const params = [student.id, student.firstName, student.lastName, student.grade, student.gradeCategory, student.documentType, student.documentNumber, student.email, student.phone];
-
-      db.run(insertSql, params, function (insertErr) {
-        if (insertErr) return res.status(500).json({ error: insertErr.message });
-
-        db.run('DELETE FROM students WHERE id = ?', [id], function (deleteErr) {
-          if (deleteErr) return res.status(500).json({ error: deleteErr.message });
-          res.json({ message: 'Estudiante eliminado de forma pasiva y movido a la base de datos de removed_students' });
-        });
+      await student.update({
+        firstName,
+        lastName,
+        grade,
+        gradeCategory,
+        documentType,
+        documentNumber,
+        email,
+        phone
       });
-    });
+      res.json(student);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const student = await Student.findByPk(id);
+      if (!student) return res.status(404).json({ error: 'Estudiante no encontrado' });
+
+      // Mover a removed_students
+      await RemovedStudent.create({
+        studentId: student.id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        grade: student.grade,
+        gradeCategory: student.gradeCategory,
+        documentType: student.documentType,
+        documentNumber: student.documentNumber,
+        email: student.email,
+        phone: student.phone
+      });
+
+      await student.destroy();
+      res.json({ message: 'Estudiante eliminado de forma pasiva y movido a la base de datos de removed_students' });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;

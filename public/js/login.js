@@ -1,62 +1,68 @@
-let currentRole = 'student';
-
 document.addEventListener('DOMContentLoaded', () => {
-  const roleButtons = document.querySelectorAll('.role-btn');
-  roleButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      roleButtons.forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      currentRole = e.target.dataset.role;
-      document.querySelectorAll('.role-fields').forEach(section => section.classList.remove('active'));
-      document.getElementById(`${currentRole}-fields`).classList.add('active');
-    });
-  });
-
-  document.getElementById('login-form').addEventListener('submit', handleLogin);
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
 });
 
 async function handleLogin(e) {
   e.preventDefault();
+  e.stopPropagation();
   const messageDiv = document.getElementById('message');
-  messageDiv.innerHTML = '';
+  messageDiv.style.display = 'block';
+  messageDiv.className = 'message';
+  messageDiv.innerHTML = 'Verificando credenciales...';
+
+  const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
 
   try {
-    if (currentRole === 'teacher') {
-      const email = document.getElementById('teacher-email').value.trim();
-      const password = document.getElementById('teacher-password').value;
+    const identifier = document.getElementById('login-identifier').value.trim();
+    const password = document.getElementById('login-password').value;
 
-      const response = await fetch('/api/auth/teacher/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error al iniciar sesión');
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userType', 'teacher');
-      localStorage.setItem('userId', data.teacher.id);
-      window.location.href = '/teacher-portal.html';
-    } else {
-      const documentNumber = document.getElementById('student-document').value.trim();
-      const password = document.getElementById('student-password').value;
-
-      const response = await fetch('/api/auth/student/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentNumber, password })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error al iniciar sesión');
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userType', 'student');
-      localStorage.setItem('userId', data.student.id);
-      window.location.href = '/student-portal.html';
+    if (!identifier || !password) {
+      throw new Error('Ingresa tu usuario y contraseña.');
     }
+
+    const response = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Credenciales incorrectas');
+
+    // Guardar sesión y datos del usuario
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userType', data.type);
+    localStorage.setItem('userId', data.user.id);
+    
+    // Guardar el objeto de usuario específico según el tipo
+    if (data.type === 'teacher') {
+        localStorage.setItem('teacher', JSON.stringify(data.user));
+    } else if (data.type === 'parent') {
+        localStorage.setItem('parent', JSON.stringify(data.user));
+    } else {
+        localStorage.setItem('student', JSON.stringify(data.user));
+    }
+
+    messageDiv.className = 'message success';
+    messageDiv.innerHTML = `¡Bienvenido ${data.user.firstName}! Redirigiendo...`;
+
+    setTimeout(() => {
+      let targetPath = '/html/student-portal.html';
+      if (data.type === 'teacher') {
+          targetPath = data.user.role === 'director' ? '/html/director-portal.html' : '/html/teacher-portal.html';
+      } else if (data.type === 'parent') {
+          targetPath = '/html/parent-portal.html';
+      }
+      
+      const redirectURL = window.location.port === '3000' ? targetPath : `http://localhost:3000${targetPath}`;
+      window.location.href = redirectURL;
+    }, 1000);
+
   } catch (error) {
-    messageDiv.innerHTML = `<p class="error">${error.message}</p>`;
+    messageDiv.className = 'message error';
+    messageDiv.innerHTML = `⚠️ ${error.message}`;
   }
 }

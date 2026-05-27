@@ -3,83 +3,159 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portal Estudiante - Colegio</title>
+  <title>Portal Estudiante | Mi Colegio</title>
   <link rel="stylesheet" href="../css/modern-css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="navbar">
-    <div>
-      <h2>Portal del Estudiante</h2>
-      <p class="navbar-subtitle">Consulta tus calificaciones, cursos y materiales compartidos.</p>
-    </div>
-    <div class="navbar-right">
-      <span id="student-name"></span>
-      <button id="theme-toggle" type="button">Cambiar tema</button>
-      <button onclick="logout()">Cerrar Sesión</button>
-    </div>
-  </div>
-
-  <div class="page-grid">
-    <aside class="side-panel">
-      <div class="profile-card">
-        <p class="eyebrow">Estudiante</p>
-        <h3 id="student-name-side"></h3>
-        <p>Grado <strong id="student-grade"></strong></p>
-        <p>Categoría <strong id="student-category"></strong></p>
+  <div class="portal-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h2>Colegio <span>IA</span></h2>
       </div>
-      <nav class="panel-menu">
-        <button class="menu-button active" data-section="dashboard">Tablero</button>
-        <button class="menu-button" data-section="courses">Mis cursos</button>
-        <button class="menu-button" data-section="documents">Documentos</button>
-        <button class="menu-button" data-section="assistant">Asistente IA</button>
+      
+      <div class="profile-card card" style="padding: 1rem; margin-bottom: 0;">
+        <p class="eyebrow" style="font-size: 0.65rem; margin-bottom: 0.5rem;">Estudiante</p>
+        <h3 id="student-name-side" style="margin-bottom: 0.25rem;">Cargando...</h3>
+        <p id="student-meta" style="font-size: 0.8rem; color: var(--text-muted);"></p>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-section="dashboard">
+          <i>📊</i> Mi Progreso
+        </button>
+        <button class="nav-btn" data-section="courses">
+          <i>📚</i> Mis Materias
+        </button>
+        <button class="nav-btn" data-section="schedule">
+          <i>⏰</i> Horario
+        </button>
       </nav>
+
+      <div style="margin-top: auto;">
+        <button onclick="logout()" class="btn-logout" style="width: 100%;">Cerrar Sesión</button>
+      </div>
     </aside>
 
-    <main class="content-panel">
-      <section id="dashboard-section" class="panel-section active">
-        <div class="card grid-cards">
-          <div>
-            <h3>Bienvenido</h3>
-            <p>Revisa tus últimas calificaciones y recursos publicados por tus profesores.</p>
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header-bar">
+        <div>
+          <h1 id="section-title">Mi Tablero</h1>
+          <p class="text-muted">Revisa tus notas, horario y materiales.</p>
+        </div>
+        <button id="theme-toggle" type="button">🌓 Modo</button>
+      </header>
+
+      <!-- Dashboard -->
+      <section id="dashboard-section" class="section-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p class="text-muted">Promedio General</p>
+            <div class="stat-val" id="overall-average" style="color: var(--primary);">0.0</div>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem;" id="average-status">Cargando...</p>
           </div>
-          <div>
-            <h3>Trimestres recientes</h3>
-            <p>Selecciona un tema para verlo en detalle.</p>
+          <div class="stat-card">
+            <p class="text-muted">Materias Cursadas</p>
+            <div class="stat-val" id="total-subjects" style="color: var(--secondary);">0</div>
+          </div>
+          <div class="stat-card">
+            <p class="text-muted">Estado Académico</p>
+            <div class="stat-val" id="academic-status" style="color: var(--accent); font-size: 1.5rem; padding-top: 0.5rem;">--</div>
           </div>
         </div>
 
         <div class="card">
-          <h3>Últimas calificaciones</h3>
-          <div id="grades-display"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Calificaciones Recientes</h3>
+            <span class="eyebrow" style="color: var(--primary); background: rgba(99, 102, 241, 0.1); padding: 0.25rem 0.75rem; border-radius: 1rem;">Periodo 2026</span>
+          </div>
+          
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Materia</th>
+                  <th>Profesor</th>
+                  <th>Trimestre</th>
+                  <th>Nota</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="grades-table-body">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
-      <section id="courses-section" class="panel-section">
+      <!-- Courses Section -->
+      <section id="courses-section" class="section-content hidden">
         <div class="card">
-          <h3>Mis cursos</h3>
-          <div id="courses-list"></div>
+          <h3>Mis materias y cursos</h3>
+          <div id="courses-list" class="stats-grid">
+            <!-- Se llena dinámicamente -->
+          </div>
         </div>
       </section>
 
-      <section id="documents-section" class="panel-section">
+      <!-- Schedule Section -->
+      <section id="schedule-section" class="section-content hidden">
         <div class="card">
-          <h3>Documentos de profesores</h3>
-          <div id="documents-list"></div>
+          <h3>Mi Horario de Clases</h3>
+          <p class="text-muted">Consulta tus horas de clase de Lunes a Viernes.</p>
+          <div style="overflow-x: auto; margin-top: 2rem;">
+            <table id="schedule-table">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Lunes</th>
+                  <th>Martes</th>
+                  <th>Miércoles</th>
+                  <th>Jueves</th>
+                  <th>Viernes</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-body">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
-      <section id="assistant-section" class="panel-section">
-        <div class="assistant-banner">
-          <h3>Asistente IA</h3>
-          <p>Pide consejos de estudio o aclaraciones sobre tus materias.</p>
-          <form id="assistant-form">
-            <textarea placeholder="Escribe tu pregunta aquí..." required></textarea>
-            <button type="submit">Consultar</button>
-          </form>
-          <div id="assistant-answer" class="answer-box"></div>
+      <!-- Documents Section -->
+      <section id="documents-section" class="section-content hidden">
+        <div class="card">
+          <h3>Documentos y Materiales de Apoyo</h3>
+          <p class="text-muted">Descarga las guías y talleres compartidos por tus profesores.</p>
+          <div id="documents-list" style="margin-top: 1.5rem; display: grid; gap: 1rem;">
+            <!-- Se llena dinámicamente -->
+          </div>
         </div>
       </section>
     </main>
+
+    <!-- Assistant Panel -->
+    <aside class="assistant-panel">
+      <div style="text-align: center;">
+        <h3 style="margin-bottom: 0.5rem;">Tutor IA Personal</h3>
+        <p class="text-muted" style="font-size: 0.85rem;">Pregunta lo que no entiendas de tus clases.</p>
+      </div>
+
+      <div id="assistant-chat" class="assistant-chat">
+        <div class="chat-bubble bubble-ai">
+          ¡Hola! Soy tu tutor IA. ¿Tienes alguna duda con tus tareas de hoy?
+        </div>
+      </div>
+
+      <form id="assistant-form" class="assistant-input-group">
+        <textarea id="assistant-input" placeholder="Escribe tu pregunta..." rows="3" required></textarea>
+        <button type="submit" class="btn-primary">Consultar Tutor</button>
+      </form>
+    </aside>
   </div>
 
   <script src="../js/student.js"></script>

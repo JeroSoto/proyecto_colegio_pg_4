@@ -1,16 +1,45 @@
-// El modelo de estudiante eliminado refleja un borrado pasivo.
-// Aquí se guarda un registro para poder consultar estudiantes que ya no siguen en el colegio.
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-module.exports = {
-  fields: [
-    'studentId',
-    'firstName',
-    'lastName',
-    'grade',
-    'gradeCategory',
-    'documentType',
-    'documentNumber',
-    'email',
-    'phone'
-  ]
-};
+const RemovedStudent = sequelize.define('RemovedStudent', {
+  studentId: {
+    type: DataTypes.INTEGER
+  },
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  grade: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  gradeCategory: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  documentType: {
+    type: DataTypes.STRING
+  },
+  documentNumber: {
+    type: DataTypes.STRING
+  },
+  email: {
+    type: DataTypes.STRING
+  },
+  phone: {
+    type: DataTypes.STRING
+  },
+  removedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  tableName: 'removed_students',
+  timestamps: false
+});
+
+module.exports = RemovedStudent;
