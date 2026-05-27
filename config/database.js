@@ -5,11 +5,11 @@ dotenv.config({ path: '/var/www/empresas-app/proyecto_colegio_pg_4/.env' });
 
 // Volvemos a MySQL para compatibilidad con phpMyAdmin según solicitud del usuario
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'colegio',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASS || '',
+  'colegio',
+  'root',
+  'Root123456!',
   {
-    host: process.env.DB_HOST || 'localhost',
+    host: 'localhost',
     dialect: 'mysql',
     logging: false,
     define: {
