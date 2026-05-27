@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
-dotenv.config({path:'/var/www/empresas-app/proyecto_colegio_pg_4/.env'});
+// Cargar variables de entorno desde .env en la raíz del proyecto si existe
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
@@ -21,6 +22,7 @@ const parentRoutes = require('./routes/parents');
 
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 const app = express();
 
@@ -97,8 +99,8 @@ app.get('*', (req, res) => {
 models.sequelize.sync()
   .then(() => {
     console.log('Base de datos sincronizada correctamente.');
-    app.listen(PORT, () => {
-      console.log(`Servidor en http://localhost:${PORT}`);
+    app.listen(PORT, HOST, () => {
+      console.log(`Servidor en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT} (bound to ${HOST})`);
     });
   })
   .catch(err => {

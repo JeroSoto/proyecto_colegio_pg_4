@@ -13,7 +13,8 @@ async function handleLogin(e) {
   messageDiv.className = 'message';
   messageDiv.innerHTML = 'Verificando credenciales...';
 
-  const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
+  // Use relative API paths so the client talks to the same server
+  const API_BASE = '';
 
   try {
     const identifier = document.getElementById('login-identifier').value.trim();
@@ -52,13 +53,12 @@ async function handleLogin(e) {
     setTimeout(() => {
       let targetPath = '/html/student-portal.html';
       if (data.type === 'teacher') {
-          targetPath = data.user.role === 'director' ? '/html/director-portal.html' : '/html/teacher-portal.html';
+        targetPath = data.user.role === 'director' ? '/html/director-portal.html' : '/html/teacher-portal.html';
       } else if (data.type === 'parent') {
-          targetPath = '/html/parent-portal.html';
+        targetPath = '/html/parent-portal.html';
       }
-      
-      const redirectURL = window.location.port === '3000' ? targetPath : `http://localhost:3000${targetPath}`;
-      window.location.href = redirectURL;
+      // Redirigir al mismo host/origen donde se sirvió la página
+      window.location.href = window.location.origin + targetPath;
     }, 1000);
 
   } catch (error) {

@@ -3,6 +3,7 @@ const express = require('express');
 module.exports = (models, bcrypt, jwt) => {
   const router = express.Router();
   const { Student, Teacher, Parent } = models;
+  const { Op } = require('sequelize');
   const JWT_SECRET = String(process.env.JWT_SECRET || 'secret123');
 
   // LOGIN UNIFICADO (Detección automática de rol)
@@ -11,19 +12,19 @@ module.exports = (models, bcrypt, jwt) => {
     console.log(`Intento de login unificado para: ${identifier}`);
 
     try {
-      // 1. Buscar en Profesores (por email)
-      let user = await Teacher.findOne({ where: { email: identifier } });
+      // 1. Buscar en Profesores (por email o número de documento)
+      let user = await Teacher.findOne({ where: { [Op.or]: [{ email: identifier }, { documentNumber: identifier }] } });
       let type = 'teacher';
 
-      // 2. Si no es profesor, buscar en Padres (por email)
+      // 2. Si no es profesor, buscar en Padres (por email o documento)
       if (!user) {
-        user = await Parent.findOne({ where: { email: identifier } });
+        user = await Parent.findOne({ where: { [Op.or]: [{ email: identifier }, { documentNumber: identifier }] } });
         type = 'parent';
       }
 
-      // 3. Si no es padre, buscar en Estudiantes (por documento)
+      // 3. Si no es padre, buscar en Estudiantes (por documento o email)
       if (!user) {
-        user = await Student.findOne({ where: { documentNumber: identifier } });
+        user = await Student.findOne({ where: { [Op.or]: [{ documentNumber: identifier }, { email: identifier }] } });
         type = 'student';
       }
 
