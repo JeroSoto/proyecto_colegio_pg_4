@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
+dotenv.config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
@@ -18,7 +19,6 @@ const documentRoutes = require('./routes/documents');
 const courseRoutes = require('./routes/courses');
 const parentRoutes = require('./routes/parents');
 
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
