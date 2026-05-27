@@ -30,7 +30,14 @@ async function handleLogin(e) {
       body: JSON.stringify({ identifier, password })
     });
 
-    const data = await response.json();
+    // Leer la respuesta de forma segura: algunos errores pueden devolver cuerpo vacío
+    let data;
+    const text = await response.text();
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (err) {
+      data = { error: text || 'Respuesta no válida del servidor' };
+    }
     if (!response.ok) throw new Error(data.error || 'Credenciales incorrectas');
 
     // Guardar sesión y datos del usuario

@@ -4,7 +4,8 @@
   "description": "Servidor para administración de estudiantes y asistencia IA",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "seed": "node seed.js"
   },
   "dependencies": {
     "axios": "^1.6.0",

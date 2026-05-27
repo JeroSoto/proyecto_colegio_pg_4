@@ -1,0 +1,15 @@
+[Unit]
+Description=Proyecto Colegio Node App
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/proyecto_colegio
+EnvironmentFile=/home/ubuntu/proyecto_colegio/.env
+ExecStart=/usr/bin/node /home/ubuntu/proyecto_colegio/app.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
